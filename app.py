@@ -1,94 +1,128 @@
 import streamlit as st
 from fpdf import FPDF
 
+# Classe para configurar a estrutura e estética do PDF
 class ResumePDF(FPDF):
     def header(self):
-        # Estética do cabeçalho pode ser personalizada aqui
-        pass
+        # Espaço em branco no topo
+        self.ln(10)
+
+    def footer(self):
+        # Rodapé com número de página
+        self.set_y(-15)
+        self.set_font("helvetica", "I", 8)
+        self.cell(0, 10, f"Página {self.page_no()}", align="C")
 
     def add_section_title(self, title):
-        self.set_font("Arial", 'B', 12)
-        self.set_fill_color(240, 240, 240)
-        self.cell(0, 10, title.upper(), ln=True, fill=True)
-        self.ln(2)
+        # Estilização dos títulos das seções
+        self.set_font("helvetica", "B", 12)
+        self.set_text_color(40, 70, 140)  # Tom de azul profissional
+        self.cell(0, 10, title.upper(), ln=True)
+        # Linha horizontal decorativa
+        self.set_draw_color(40, 70, 140)
+        self.line(self.get_x(), self.get_y(), self.get_x() + 190, self.get_y())
+        self.ln(4)
 
-    def add_body_text(self, text, bold=False):
-        style = 'B' if bold else ''
-        self.set_font("Arial", style, 10)
+    def add_body_text(self, text):
+        # Configuração do corpo de texto
+        self.set_font("helvetica", "", 10)
+        self.set_text_color(0, 0, 0)
         self.multi_cell(0, 6, text)
-        self.ln(1)
+        self.ln(3)
 
 def generate_pdf(data):
+    # Inicializa o PDF (fpdf2 usa helvetica como padrão seguro para acentos)
     pdf = ResumePDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
-    # Nome e Contato
-    pdf.set_font("Arial", 'B', 20)
-    pdf.cell(0, 10, data['nome'].upper(), ln=True, align='C')
-    pdf.set_font("Arial", '', 10)
-    contact_info = f"{data['email']} | {data['telefone']} | {data['linkedin']}"
-    pdf.cell(0, 10, contact_info, ln=True, align='C')
-    pdf.ln(5)
+    # --- CABEÇALHO ---
+    pdf.set_font("helvetica", "B", 24)
+    pdf.cell(0, 12, data['nome'].upper(), ln=True, align="C")
+    
+    pdf.set_font("helvetica", "", 10)
+    pdf.set_text_color(80, 80, 80)
+    contato = f"{data['email']}  |  {data['telefone']}  |  {data['linkedin']}"
+    pdf.cell(0, 8, contato, ln=True, align="C")
+    pdf.ln(10)
 
-    # Resumo Profissional
-    pdf.add_section_title("Resumo Profissional")
-    pdf.add_body_text(data['resumo'])
-    pdf.ln(3)
+    # --- SEÇÕES ---
+    if data['resumo']:
+        pdf.add_section_title("Resumo Profissional")
+        pdf.add_body_text(data['resumo'])
 
-    # Experiência
-    pdf.add_section_title("Experiência Profissional")
-    pdf.add_body_text(data['experiencia'])
-    pdf.ln(3)
+    if data['experiencia']:
+        pdf.add_section_title("Experiência Profissional")
+        pdf.add_body_text(data['experiencia'])
 
-    # Formação
-    pdf.add_section_title("Formação Acadêmica")
-    pdf.add_body_text(data['formacao'])
-    pdf.ln(3)
+    if data['formacao']:
+        pdf.add_section_title("Formação Acadêmica")
+        pdf.add_body_text(data['formacao'])
 
-    # Habilidades
-    pdf.add_section_title("Habilidades Técnicas")
-    pdf.add_body_text(data['habilidades'])
+    if data['habilidades']:
+        pdf.add_section_title("Habilidades e Competências")
+        pdf.add_body_text(data['habilidades'])
 
-    return pdf.output(dest='S').encode('latin-1')
+    # Retorna o PDF como uma sequência de bytes
+    return pdf.output()
 
-# Interface Streamlit
-st.set_page_config(page_title="Gerador de Currículo Premium", layout="centered")
+# --- INTERFACE STREAMLIT ---
+st.set_page_config(page_title="Gerador de Currículo", page_icon="📄")
 
-st.title("📄 Resume Builder Pro")
-st.subheader("Crie um currículo impecável em segundos")
+# CSS customizado para melhorar o visual da interface
+st.markdown("""
+    <style>
+    .main { background-color: #f5f7f9; }
+    .stButton>button { width: 100%; background-color: #28468c; color: white; }
+    </style>
+    """, unsafe_allow_html=True)
 
-with st.form("resume_form"):
+st.title("📄 Gerador de Currículo Premium")
+st.write("Preencha os campos abaixo para gerar um PDF profissional e formatado.")
+
+with st.form("form_curriculo"):
+    st.subheader("Informações Pessoais")
     col1, col2 = st.columns(2)
     with col1:
-        nome = st.text_input("Nome Completo")
-        email = st.text_input("E-mail")
+        nome = st.text_input("Nome Completo", placeholder="Ex: Victor Ricardo")
+        email = st.text_input("E-mail", placeholder="seuemail@exemplo.com")
     with col2:
-        telefone = st.text_input("Telefone/WhatsApp")
-        linkedin = st.text_input("Link do LinkedIn")
+        telefone = st.text_input("Telefone", placeholder="(21) 99999-9999")
+        linkedin = st.text_input("LinkedIn/Portfólio", placeholder="linkedin.com/in/seuusuario")
     
-    resumo = st.text_area("Resumo Profissional (Destaque seus pontos fortes)")
-    experiencia = st.text_area("Experiência (Empresa - Cargo - Período - Atividades)")
-    formacao = st.text_area("Formação Acadêmica")
-    habilidades = st.text_input("Habilidades (Separe por vírgulas)")
+    st.divider()
     
-    submit = st.form_submit_button("Gerar Currículo Perfeito")
+    st.subheader("Conteúdo Profissional")
+    resumo = st.text_area("Resumo Profissional", help="Uma breve apresentação sobre sua carreira.")
+    experiencia = st.text_area("Experiência Profissional", help="Liste cargo, empresa e principais conquistas.")
+    formacao = st.text_area("Formação Acadêmica", help="Curso, Instituição e ano de conclusão.")
+    habilidades = st.text_area("Habilidades Técnicas", placeholder="Ex: Python, Excel Avançado, Gestão de Projetos...")
+    
+    submit_button = st.form_submit_button("GERAR MEU CURRÍCULO")
 
-if submit:
-    if nome and email:
-        data = {
-            "nome": nome, "email": email, "telefone": telefone,
-            "linkedin": linkedin, "resumo": resumo,
-            "experiencia": experiencia, "formacao": formacao, "habilidades": habilidades
-        }
-        
-        pdf_bytes = generate_pdf(data)
-        
-        st.success("✅ Currículo gerado com sucesso!")
-        st.download_button(
-            label="⬇️ Baixar PDF",
-            data=pdf_bytes,
-            file_name=f"Curriculo_{nome.replace(' ', '_')}.pdf",
-            mime="application/pdf"
-        )
+# --- LÓGICA DE GERAÇÃO ---
+if submit_button:
+    if not nome or not email:
+        st.warning("Por favor, preencha o Nome e o E-mail para continuar.")
     else:
-        st.error("Por favor, preencha pelo menos o nome e o e-mail.")
+        try:
+            dados_usuario = {
+                "nome": nome, "email": email, "telefone": telefone,
+                "linkedin": linkedin, "resumo": resumo,
+                "experiencia": experiencia, "formacao": formacao,
+                "habilidades": habilidades
+            }
+            
+            # Gera os bytes do PDF
+            pdf_output = generate_pdf(dados_usuario)
+            
+            st.success("✨ Seu currículo foi formatado com perfeição!")
+            
+            st.download_button(
+                label="⬇️ Baixar Currículo em PDF",
+                data=pdf_output,
+                file_name=f"Curriculo_{nome.replace(' ', '_')}.pdf",
+                mime="application/pdf"
+            )
+        except Exception as e:
+            st.error(f"Ocorreu um erro ao gerar o PDF: {e}")
