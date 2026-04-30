@@ -3,76 +3,92 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY
 from io import BytesIO
 
-def generate_pdf(data):
+def generate_psychology_pdf(data):
     buffer = BytesIO()
-    # Criar o documento com margens
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=50, leftMargin=50, topMargin=50, bottomMargin=50)
+    # Criar o documento com margens generosas para um visual limpo e calmo
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=72)
     styles = getSampleStyleSheet()
     elements = []
 
+    # --- PALETA DE CORES PSICOLOGIA (Sóbria e Acolhedora) ---
+    color_primary = colors.HexColor("#1A3A5F") # Azul Petróleo Profundo (Profissionalismo, calma)
+    color_secondary = colors.HexColor("#4F4F4F") # Cinza Escuro (Sobriedade, leitura fácil)
+    color_accent = colors.HexColor("#A9A9A9") # Cinza Claro (Divisores sutis)
+
     # --- ESTILOS CUSTOMIZADOS ---
+    # Título do Nome: Fonte elegante, cor sóbria, centralizado
     style_name = ParagraphStyle(
         'NameStyle',
         parent=styles['Heading1'],
-        fontSize=26,
-        textColor=colors.HexColor("#1A3A5F"),
+        fontSize=24,
+        textColor=color_primary,
         alignment=TA_CENTER,
-        spaceAfter=2
+        spaceAfter=6,
+        fontName='Helvetica-Bold'
     )
     
+    # Informações de Contato: Fonte menor, cor neutra, centralizado, espaçamento sutil
     style_contact = ParagraphStyle(
         'ContactStyle',
         parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.grey,
+        fontSize=9,
+        textColor=color_secondary,
         alignment=TA_CENTER,
-        spaceAfter=20
+        spaceAfter=24,
+        fontName='Helvetica'
     )
 
+    # Títulos das Seções: Fonte média, cor primária, alinhado à esquerda, sem linhas intrusivas
     style_section_title = ParagraphStyle(
         'SectionTitle',
         parent=styles['Heading2'],
-        fontSize=14,
-        textColor=colors.HexColor("#1A3A5F"),
-        spaceBefore=12,
-        spaceAfter=6,
-        borderPadding=(0, 0, 2, 0),
+        fontSize=12,
+        textColor=color_primary,
+        spaceBefore=16,
+        spaceAfter=8,
+        fontName='Helvetica-Bold'
     )
 
+    # Corpo do Texto: Fonte legível, cor neutra, justificado, espaçamento generoso entre linhas
     style_body = ParagraphStyle(
         'BodyStyle',
         parent=styles['Normal'],
-        fontSize=11,
-        leading=14, # Espaçamento entre linhas
-        alignment=0, # Justificado à esquerda
-        spaceAfter=10
+        fontSize=10,
+        leading=14, # Espaçamento entre linhas (muito importante para psicologia)
+        textColor=color_secondary,
+        alignment=TA_JUSTIFY,
+        spaceAfter=12,
+        fontName='Helvetica'
     )
 
-    # --- MONTAGEM DO CONTEÚDO ---
+    # --- MONTAGEM DO CONTEÚDO (Cabeçalho Perfeito) ---
     
-    # Nome
+    # Nome (Correção da imagem: sem sobreposição)
     elements.append(Paragraph(data['nome'].upper(), style_name))
     
-    # Contatos
+    # Contatos (Formatados elegantemente abaixo do nome)
     contatos = f"{data['email']}  •  {data['telefone']}<br/>{data['linkedin']}"
     elements.append(Paragraph(contatos, style_contact))
 
-    # Função para adicionar seções com linha divisória
+    # --- DIVISOR SUTIL (Substituindo a linha grossa) ---
+    elements.append(HRFlowable(width="100%", thickness=0.5, color=color_accent, spaceAfter=20))
+
+    # Função para adicionar seções com formatação de psicologia
     def add_section(title, content):
         if content:
             elements.append(Paragraph(title.upper(), style_section_title))
-            elements.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#1A3A5F"), spaceAfter=10))
             # Substituir quebras de linha por tags <br/> do HTML (necessário no ReportLab)
             formatted_content = content.replace('\n', '<br/>')
             elements.append(Paragraph(formatted_content, style_body))
 
     add_section("Resumo Profissional", data['resumo'])
-    add_section("Experiência Profissional", data['experiencia'])
+    add_section("Experiência Clínica", data['experiencia'])
     add_section("Formação Acadêmica", data['formacao'])
-    add_section("Habilidades e Competências", data['habilidades'])
+    add_section("Áreas de Atuação e Especialidades", data['habilidades'])
+    add_section("Cursos e Certificações", data['certificacoes'])
 
     # Gerar o PDF
     doc.build(elements)
@@ -80,48 +96,63 @@ def generate_pdf(data):
     buffer.close()
     return pdf_bytes
 
-# --- INTERFACE STREAMLIT ---
-st.set_page_config(page_title="Gerador de Currículo", layout="centered")
+# --- INTERFACE STREAMLIT (Limpa e Funcional) ---
+st.set_page_config(page_title="Gerador de Currículo - Psicologia", layout="centered")
 
-st.title("🚀 Curriculum Designer Pro")
-st.info("Utilizando a engine ReportLab para máxima precisão visual.")
+# CSS para esconder o menu do Streamlit para um visual mais profissional na ferramenta
+st.markdown("""
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🌱 Curriculum Vitae - Psicologia")
+st.markdown("---")
 
 with st.form("resume_form"):
+    st.subheader("Informações Pessoais")
     col1, col2 = st.columns(2)
     with col1:
-        nome = st.text_input("Nome Completo")
-        email = st.text_input("E-mail")
+        nome = st.text_input("Nome Completo", placeholder="Débora de Carvalho Moreira")
+        email = st.text_input("E-mail", placeholder="seu.email@exemplo.com")
     with col2:
-        telefone = st.text_input("Telefone")
-        linkedin = st.text_input("LinkedIn")
+        telefone = st.text_input("Telefone (com DDD)", placeholder="(11) 9XXXX-XXXX")
+        linkedin = st.text_input("LinkedIn (opcional)", placeholder="linkedin.com/in/seuusuario")
     
-    resumo = st.text_area("Resumo Profissional")
-    experiencia = st.text_area("Experiência Profissional")
-    formacao = st.text_area("Formação Acadêmica")
-    habilidades = st.text_area("Habilidades Técnicas")
+    st.divider()
     
-    submit = st.form_submit_button("GERAR PDF PERFEITO")
+    st.subheader("Conteúdo Profissional")
+    resumo = st.text_area("Resumo Profissional (Breve introdução sobre sua abordagem e foco)")
+    experiencia = st.text_area("Experiência Clínica (Instituições, Clínicas, Tempo, Principais demandas)")
+    formacao = st.text_area("Formação Acadêmica (Graduação, Pós-graduação, Instituição, Ano)")
+    habilidades = st.text_area("Áreas de Atuação e Especialidades (Terapia Cognitivo-Comportamental, etc.)")
+    certificacoes = st.text_area("Cursos e Certificações (Cursos relevantes, Congressos)")
+    
+    st.divider()
+    submit = st.form_submit_button("GERAR CURRÍCULO PROFISSIONAL EM PDF")
 
 if submit:
-    if nome and email:
+    if nome and email and resumo and experiencia and formacao:
         try:
             data = {
                 "nome": nome, "email": email, "telefone": telefone,
                 "linkedin": linkedin, "resumo": resumo,
                 "experiencia": experiencia, "formacao": formacao,
-                "habilidades": habilidades
+                "habilidades": habilidades,
+                "certificacoes": certificacoes
             }
             
-            pdf_result = generate_pdf(data)
+            pdf_result = generate_psychology_pdf(data)
             
-            st.success("Currículo gerado com sucesso!")
+            st.success("✨ Currículo gerado com sucesso!")
             st.download_button(
-                label="⬇️ Baixar PDF",
+                label="⬇️ BAIXAR PDF",
                 data=pdf_result,
-                file_name=f"Curriculo_{nome.replace(' ', '_')}.pdf",
+                file_name=f"Curriculo_{nome.replace(' ', '_')}_Psicologia.pdf",
                 mime="application/pdf"
             )
         except Exception as e:
-            st.error(f"Erro ao processar: {e}")
+            st.error(f"Erro ao processar a geração do PDF: {e}")
     else:
-        st.warning("Preencha ao menos Nome e E-mail.")
+        st.warning("Por favor, preencha pelo menos os campos obrigatórios: Nome, E-mail, Resumo, Experiência e Formação.")
